@@ -531,7 +531,7 @@
             visible: false,
             source: {
               cmp: 'vl-source-vector',
-              url: 'https://raw.githubusercontent.com/mesaugat/geoJSON-Nepal/master/nepal-districts.geojson',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/src/assets/geojson/MunicipalityBoundary.json?token=ACM6H4RPTTEYAMZKFS6CTGS5N5QLS',
             },
             style: [
               {
