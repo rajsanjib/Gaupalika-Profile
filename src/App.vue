@@ -78,26 +78,16 @@
       <!-- overlay marker with animation -->
       <vl-feature id="marker" ref="marker" :properties="{ start: Date.now(), duration: 2500 }">
         <template slot-scope="feature">
-          <vl-geom-point :coordinates="[-10, -10]"></vl-geom-point>
+          <vl-geom-point :coordinates="[87.5851498, 27.145691]"></vl-geom-point>
           <vl-style-box>
             <vl-style-icon src="./assets/flag.png" :scale="0.5" :anchor="[0.1, 0.95]" :size="[128, 128]"></vl-style-icon>
           </vl-style-box>
           <!-- overlay binded to feature -->
           <vl-overlay v-if="feature.geometry" :position="pointOnSurface(feature.geometry)" :offset="[10, 10]">
-            <p class="is-light box content">
-              Always opened overlay for Feature ID <strong>{{ feature.id }}</strong>
-            </p>
           </vl-overlay>
         </template>
       </vl-feature>
       <!--// overlay marker -->
-
-
-      <!-- circle geom -->
-      <vl-feature id="circle">
-        <vl-geom-circle :radius="1000000" :coordinates="[0, 30]"></vl-geom-circle>
-      </vl-feature>
-      <!--// circle geom -->
 
       <!-- base layers -->
       <vl-layer-tile v-for="layer in baseLayers" :key="layer.name" :id="layer.name" :visible="layer.visible">
@@ -240,6 +230,9 @@
   import { kebabCase, range, random, camelCase } from 'lodash'
   import { createProj, addProj, findPointOnSurface, createStyle, createMultiPointGeom, loadingBBox } from 'vuelayers/lib/ol-ext'
   import pacmanFeaturesCollection from './assets/pacman.geojson'
+  import WardFeaturesCollection from './assets/geojson/WardBoundary.geojson'
+  // import MunicipalityBoundary from './assets/geojson/MunicipalityBoundary.json'
+  import RoadFeaturesCollection from './assets/geojson/Road.geojson'
   import ScaleLine from 'ol/control/ScaleLine'
   import FullScreen from 'ol/control/FullScreen'
   import OverviewMap from 'ol/control/OverviewMap'
@@ -417,7 +410,7 @@
     methods,
     data () {
       return {
-        center: [0, 0],
+        center: [87.5851498, 27.145691],
         zoom: 2,
         rotation: 0,
         clickCoordinate: undefined,
@@ -494,7 +487,7 @@
             renderMode: 'image',
             source: {
               cmp: 'vl-source-vector',
-              staticFeatures: pacmanFeaturesCollection.features,
+              staticFeatures: RoadFeaturesCollection.features,
             },
             style: [
               {
@@ -529,16 +522,16 @@
               }),
             },
           },
-          // Countries vector layer
+          // Borders vector layer
           // loads GeoJSON data from remote server
           {
-            id: 'countries',
-            title: 'Countries',
+            id: 'borders',
+            title: 'Border',
             cmp: 'vl-layer-vector',
             visible: false,
             source: {
               cmp: 'vl-source-vector',
-              url: 'https://openlayers.org/en/latest/examples/data/geojson/countries.geojson',
+              url: 'https://raw.githubusercontent.com/mesaugat/geoJSON-Nepal/master/nepal-districts.geojson',
             },
             style: [
               {
@@ -566,146 +559,132 @@
             ],
           },
           // Tile layer with WMS source
-          {
-            id: 'wms',
-            title: 'WMS',
-            cmp: 'vl-layer-tile',
-            visible: false,
-            source: {
-              cmp: 'vl-source-wms',
-              url: 'https://ahocevar.com/geoserver/wms',
-              layers: 'topp:states',
-              extParams: { TILED: true },
-              serverType: 'geoserver',
-            },
-          },
+          // {
+          //   id: 'wms',
+          //   title: 'WMS',
+          //   cmp: 'vl-layer-tile',
+          //   visible: false,
+          //   source: {
+          //     cmp: 'vl-source-wms',
+          //     url: 'https://ahocevar.com/geoserver/wms',
+          //     layers: 'topp:states',
+          //     extParams: { TILED: true },
+          //     serverType: 'geoserver',
+          //   },
+          // },
           // Tile layer with WMTS source
-          {
-            id: 'wmts',
-            title: 'WMTS',
-            cmp: 'vl-layer-tile',
-            visible: false,
-            source: {
-              cmp: 'vl-source-wmts',
-              url: 'https://services.arcgisonline.com/arcgis/rest/services/Demographics/USA_Population_Density/MapServer/WMTS/',
-              layerName: '0',
-              matrixSet: 'EPSG:3857',
-              format: 'image/png',
-              styleName: 'default',
-            },
-          },
           // Vector layer with clustering
-          {
-            id: 'cluster',
-            title: 'Cluster',
-            cmp: 'vl-layer-vector',
-            renderMode: 'image',
-            visible: false,
-            // Cluster source (vl-source-cluster) wraps vector source (vl-source-vector)
-            source: {
-              cmp: 'vl-source-cluster',
-              distance: 50,
-              source: {
-                cmp: 'vl-source-vector',
-                // features defined as array of GeoJSON encoded Features
-                // to not overload Vue and DOM
-                features: range(0, 10000).map(i => {
-                  let coordinate = [
-                    random(-50, 50),
-                    random(-50, 50),
-                  ]
-
-                  return {
-                    type: 'Feature',
-                    id: 'random-' + i,
-                    geometry: {
-                      type: 'Point',
-                      coordinates: coordinate,
-                    },
-                  }
-                }),
-              },
-            },
-            style: [
-              {
-                cmp: 'vl-style-func',
-                factory: this.clusterStyleFunc,
-              },
-            ],
-          },
-          {
-            id: 'wfs',
-            title: 'WFS (Canada water areas)',
-            cmp: 'vl-layer-vector',
-            visible: false,
-            renderMode: 'image',
-            source: {
-              cmp: 'vl-source-vector',
-              features: [],
-              url (extent, resolution, projection) {
-                return 'https://ahocevar.com/geoserver/wfs?service=WFS&' +
-                  'version=1.1.0&request=GetFeature&typename=osm:water_areas&' +
-                  'outputFormat=application/json&srsname=' + projection + '&' +
-                  'bbox=' + extent.join(',') + ',' + projection
-              },
-              strategyFactory () {
-                return loadingBBox
-              },
-            },
-          },
-          {
-            id: 'static-image',
-            title: 'Static Image with custom projection',
-            cmp: 'vl-layer-image',
-            visible: false,
-            source: {
-              cmp: 'vl-source-image-static',
-              projection: customProj.getCode(),
-              url: 'https://imgs.xkcd.com/comics/online_communities.png',
-              size: [1024, 968],
-              extent: imageExtent,
-            },
-          },
-          {
-            id: 'wms-image',
-            title: 'Image WMS',
-            cmp: 'vl-layer-image',
-            visible: false,
-            source: {
-              cmp: 'vl-source-image-wms',
-              url: 'https://ahocevar.com/geoserver/wms',
-              layers: 'topp:states',
-              serverType: 'geoserver',
-            },
-          },
-          {
-            id: 'vector-tiles',
-            title: 'Vector tiles',
-            cmp: 'vl-layer-vector-tile',
-            visible: false,
-            source: {
-              cmp: 'vl-source-vector-tile',
-              url: 'https://basemaps.arcgis.com/v1/arcgis/rest/services/World_Basemap/VectorTileServer/tile/{z}/{y}/{x}.pbf',
-            },
-            style: [
-              {
-                cmp: 'vl-style-box',
-                styles: {
-                  'vl-style-stroke': {
-                    width: 2,
-                    color: '#2979ff',
-                  },
-                  'vl-style-circle': {
-                    radius: 5,
-                    stroke: {
-                      width: 1.5,
-                      color: '#2979ff',
-                    },
-                  },
-                },
-              },
-            ],
-          },
+          // {
+          //   id: 'cluster',
+          //   title: 'Cluster',
+          //   cmp: 'vl-layer-vector',
+          //   renderMode: 'image',
+          //   visible: false,
+          //   // Cluster source (vl-source-cluster) wraps vector source (vl-source-vector)
+          //   source: {
+          //     cmp: 'vl-source-cluster',
+          //     distance: 50,
+          //     source: {
+          //       cmp: 'vl-source-vector',
+          //       // features defined as array of GeoJSON encoded Features
+          //       // to not overload Vue and DOM
+          //       features: range(0, 10000).map(i => {
+          //         let coordinate = [
+          //           random(-50, 50),
+          //           random(-50, 50),
+          //         ]
+          //
+          //         return {
+          //           type: 'Feature',
+          //           id: 'random-' + i,
+          //           geometry: {
+          //             type: 'Point',
+          //             coordinates: coordinate,
+          //           },
+          //         }
+          //       }),
+          //     },
+          //   },
+          //   style: [
+          //     {
+          //       cmp: 'vl-style-func',
+          //       factory: this.clusterStyleFunc,
+          //     },
+          //   ],
+          // },
+          // {
+          //   id: 'wfs',
+          //   title: 'WFS (Canada water areas)',
+          //   cmp: 'vl-layer-vector',
+          //   visible: false,
+          //   renderMode: 'image',
+          //   source: {
+          //     cmp: 'vl-source-vector',
+          //     features: [],
+          //     url (extent, resolution, projection) {
+          //       return 'https://ahocevar.com/geoserver/wfs?service=WFS&' +
+          //         'version=1.1.0&request=GetFeature&typename=osm:water_areas&' +
+          //         'outputFormat=application/json&srsname=' + projection + '&' +
+          //         'bbox=' + extent.join(',') + ',' + projection
+          //     },
+          //     strategyFactory () {
+          //       return loadingBBox
+          //     },
+          //   },
+          // },
+          // {
+          //   id: 'static-image',
+          //   title: 'Static Image with custom projection',
+          //   cmp: 'vl-layer-image',
+          //   visible: false,
+          //   source: {
+          //     cmp: 'vl-source-image-static',
+          //     projection: customProj.getCode(),
+          //     url: 'https://imgs.xkcd.com/comics/online_communities.png',
+          //     size: [1024, 968],
+          //     extent: imageExtent,
+          //   },
+          // },
+          // {
+          //   id: 'wms-image',
+          //   title: 'Image WMS',
+          //   cmp: 'vl-layer-image',
+          //   visible: false,
+          //   source: {
+          //     cmp: 'vl-source-image-wms',
+          //     url: 'https://ahocevar.com/geoserver/wms',
+          //     layers: 'topp:states',
+          //     serverType: 'geoserver',
+          //   },
+          // },
+          // {
+          //   id: 'vector-tiles',
+          //   title: 'Vector tiles',
+          //   cmp: 'vl-layer-vector-tile',
+          //   visible: false,
+          //   source: {
+          //     cmp: 'vl-source-vector-tile',
+          //     url: 'https://basemaps.arcgis.com/v1/arcgis/rest/services/World_Basemap/VectorTileServer/tile/{z}/{y}/{x}.pbf',
+          //   },
+          //   style: [
+          //     {
+          //       cmp: 'vl-style-box',
+          //       styles: {
+          //         'vl-style-stroke': {
+          //           width: 2,
+          //           color: '#2979ff',
+          //         },
+          //         'vl-style-circle': {
+          //           radius: 5,
+          //           stroke: {
+          //             width: 1.5,
+          //             color: '#2979ff',
+          //           },
+          //         },
+          //       },
+          //     },
+          //   ],
+          // },
         ],
       }
     },
