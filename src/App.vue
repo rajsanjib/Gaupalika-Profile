@@ -531,7 +531,7 @@
             visible: false,
             source: {
               cmp: 'vl-source-vector',
-              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/src/assets/geojson/MunicipalityBoundary.json?token=ACM6H4RPTTEYAMZKFS6CTGS5N5QLS',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/MunicipalityBoundary.geojson?token=ACM6H4UCS7CT55UGDZ6CIFK5N5RR6',
             },
             style: [
               {
