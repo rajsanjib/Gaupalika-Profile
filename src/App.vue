@@ -44,7 +44,7 @@
                 <div class="card-content">
                   <div class="content">
                     <p>
-                      Overlay popup content for Feature with ID <strong>{{ feature.id }}</strong>
+                      Overlay popup content for Feature with ID <strong>{{ feature.properties.palika }}</strong>
                     </p>
                     <p>
                       Popup: {{ JSON.stringify(popup) }}
@@ -133,15 +133,15 @@
       <!--// other layers -->
 
       <!-- draw components -->
-      <vl-layer-vector id="draw-pane" v-if="mapPanel.tab === 'draw'">
+      <!-- <vl-layer-vector id="draw-pane" v-if="mapPanel.tab === 'draw'">
         <vl-source-vector ident="draw-target" :features.sync="drawnFeatures"></vl-source-vector>
       </vl-layer-vector>
 
       <vl-interaction-draw v-if="mapPanel.tab === 'draw' && drawType" source="draw-target" :type="drawType"></vl-interaction-draw>
       <vl-interaction-modify v-if="mapPanel.tab === 'draw'" source="draw-target"></vl-interaction-modify>
       <vl-interaction-snap v-if="mapPanel.tab === 'draw'" source="draw-target" :priority="10"></vl-interaction-snap>
-      <!--// draw components -->
-    </vl-map>
+      // draw components -->
+     </vl-map>
     <!--// app map -->
 
     <!-- map panel, controls -->
@@ -160,7 +160,7 @@
         <p class="panel-tabs">
           <a @click="showMapPanelTab('state')" :class="mapPanelTabClasses('state')">State</a>
           <a @click="showMapPanelTab('layers')" :class="mapPanelTabClasses('layers')">Layers</a>
-          <a @click="showMapPanelTab('draw')" :class="mapPanelTabClasses('draw')">Draw</a>
+          <!-- <a @click="showMapPanelTab('draw')" :class="mapPanelTabClasses('draw')">Draw</a> -->
         </p>
 
         <div class="panel-block" v-show="mapPanel.tab === 'state'">
@@ -196,7 +196,7 @@
           </b-switch>
         </div>
 
-        <div class="panel-block draw-panel" v-show="mapPanel.tab === 'draw'">
+        <!-- <div class="panel-block draw-panel" v-show="mapPanel.tab === 'draw'">
           <div class="buttons">
             <button v-for="control in drawControls" :key="control.type || -1" @click="drawType = control.type"
                     :class="drawType && drawType === control.type ? 'is-info' : ''" class="button" >
@@ -204,7 +204,7 @@
               <span>{{ control.label }}</span>
             </button>
           </div>
-        </div>
+        </div> -->
       </b-collapse>
     </div>
     <!--// map panel, controls -->
@@ -354,9 +354,9 @@
         strokeWidth: 2 + opacity,
       }))
 
-      vectorContext.drawGeometry(flashGeom)
+      // vectorContext.drawGeometry(flashGeom)
       vectorContext.setStyle(feature.getStyle()(feature)[0])
-      vectorContext.drawGeometry(feature.getGeometry())
+      // vectorContext.drawGeometry(feature.getGeometry())
 
       if (elapsed > duration) {
         feature.set('start', Date.now())
@@ -411,7 +411,7 @@
     data () {
       return {
         center: [87.5851498, 27.145691],
-        zoom: 2,
+        zoom:   15,
         rotation: 0,
         clickCoordinate: undefined,
         selectedFeatures: [],
@@ -421,35 +421,35 @@
         },
         panelOpen: true,
         mapVisible: true,
-        drawControls: [
-          {
-            type: 'point',
-            label: 'Draw Point',
-            icon: 'map-marker',
-          },
-          {
-            type: 'line-string',
-            label: 'Draw LineString',
-            icon: 'minus',
-          },
-          {
-            type: 'polygon',
-            label: 'Draw Polygon',
-            icon: 'square-o',
-          },
-          {
-            type: 'circle',
-            label: 'Draw Circle',
-            icon: 'circle-thin',
-          },
-          {
-            type: undefined,
-            label: 'Stop drawing',
-            icon: 'times',
-          },
-        ],
-        drawType: undefined,
-        drawnFeatures: [],
+        // drawControls: [
+        //   {
+        //     type: 'point',
+        //     label: 'Draw Point',
+        //     icon: 'map-marker',
+        //   },
+        //   {
+        //     type: 'line-string',
+        //     label: 'Draw LineString',
+        //     icon: 'minus',
+        //   },
+        //   {
+        //     type: 'polygon',
+        //     label: 'Draw Polygon',
+        //     icon: 'square-o',
+        //   },
+        //   {
+        //     type: 'circle',
+        //     label: 'Draw Circle',
+        //     icon: 'circle-thin',
+        //   },
+        //   {
+        //     type: undefined,
+        //     label: 'Stop drawing',
+        //     icon: 'times',
+        //   },
+        // ],
+        // drawType: undefined,
+        // drawnFeatures: [],
         // base layers
         baseLayers: [
           {
@@ -457,23 +457,23 @@
             title: 'OpenStreetMap',
             visible: true,
           },
-          {
-            name: 'sputnik',
-            title: 'Sputnik Maps',
-            visible: false,
-          },
+          // {
+          //   name: 'sputnik',
+          //   title: 'Sputnik Maps',
+          //   visible: false,
+          // },
           // needs paid plan to get key
           // {
           //   name: 'mapbox',
           //   title: 'Mapbox',
           // },
-          {
-            name: 'bingmaps',
-            title: 'Bing Maps',
-            apiKey: 'ArbsA9NX-AZmebC6VyXAnDqjXk6mo2wGCmeYM8EwyDaxKfQhUYyk0jtx6hX5fpMn',
-            imagerySet: 'CanvasGray',
-            visible: false,
-          },
+          // {
+          //   name: 'bingmaps',
+          //   title: 'Bing Maps',
+          //   apiKey: 'ArbsA9NX-AZmebC6VyXAnDqjXk6mo2wGCmeYM8EwyDaxKfQhUYyk0jtx6hX5fpMn',
+          //   imagerySet: 'CanvasGray',
+          //   visible: false,
+          // },
         ],
         // layers config
         layers: [
@@ -531,7 +531,7 @@
             visible: false,
             source: {
               cmp: 'vl-source-vector',
-              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/MunicipalityBoundary.geojson?token=ACM6H4UCS7CT55UGDZ6CIFK5N5RR6',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Boundary.geojson?token=ACM6H4TLNXZJM7DNX542CCK5N6Q4I',
             },
             style: [
               {
@@ -558,6 +558,8 @@
               },
             ],
           },
+
+          
           // Tile layer with WMS source
           // {
           //   id: 'wms',
