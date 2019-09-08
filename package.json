@@ -17,11 +17,13 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.0.0",
+    "axios": "^0.19.0",
+    "bootstrap-vue": "^2.0.0",
     "buefy": "^0.7.0",
     "bulma": "^0.7.2",
     "lodash": "^4.17.11",
     "ol": "^5.3.1",
-    "vue": "^2.5.17",
+    "vue": "^2.6.10",
     "vuelayers": "^0.11.4"
   },
   "devDependencies": {

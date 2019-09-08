@@ -1,3 +1,4 @@
+/* eslint-disable */
 <template xmlns:>
   <div id="app" :class="[$options.name]">
     <!-- app map -->
@@ -33,27 +34,46 @@
             <template slot-scope="popup">
               <section class="card">
                 <header class="card-header">
-                  <p class="card-header-title">
-                    Feature ID {{ feature.id }}
-                  </p>
-                  <a class="card-header-icon" title="Close"
+                    <div v-if="feature.properties.Token">
+                        <p class="card-header-title">
+                            <a @click="updateHouseToken(feature.properties.Token)">House Token - {{ feature.properties.Token }}</a>
+                        </p>
+                    </div>
+                    <!-- Public Service  -->
+                    <div v-if="feature.properties.Service">
+                        <p class="card-header-title">
+                            {{feature.properties.Service}} - {{feature.properties.Name}}
+                        </p>
+                    </div>
+                    <!-- Road -->
+                     <div v-if="feature.geometry.type === 'MultiLineString'">
+                        <p class="card-header-title">
+                            {{ feature.properties.Name }}</a>
+                        </p>
+                    </div>
+                    <div v-if="feature.properties.GaPa_NaPa">
+                       <p class="card-header-title">
+                           {{ feature.properties.GaPa_NaPa }} गाउपालिका, वडा नम्बर - {{ feature.properties.NEW_WARD_N }}
+                       </p>
+                   </div>
+                  <!-- <a class="card-header-icon" title="Close"
                      @click="selectedFeatures = selectedFeatures.filter(f => f.id !== feature.id)">
                     <b-icon icon="close"></b-icon>
-                  </a>
+                  </a> -->
                 </header>
-                <div class="card-content">
+                <!-- <div class="card-content">
                   <div class="content">
                     <p>
-                      Overlay popup content for Feature with ID <strong>{{ feature.properties.palika }}</strong>
+                      <strong>{{ feature.properties.name }}</strong>
                     </p>
-                    <p>
+                     <p>
                       Popup: {{ JSON.stringify(popup) }}
                     </p>
                     <p>
                       Feature: {{ JSON.stringify({ id: feature.id, properties: feature.properties }) }}
                     </p>
                   </div>
-                </div>
+                </div> -->
               </section>
             </template>
           </vl-overlay>
@@ -78,11 +98,12 @@
       <!-- overlay marker with animation -->
       <vl-feature id="marker" ref="marker" :properties="{ start: Date.now(), duration: 2500 }">
         <template slot-scope="feature">
-          <vl-geom-point :coordinates="[87.5851498, 27.145691]"></vl-geom-point>
+          <vl-geom-point :coordinates="marker">
           <vl-style-box>
-            <vl-style-icon src="./assets/flag.png" :scale="0.5" :anchor="[0.1, 0.95]" :size="[128, 128]"></vl-style-icon>
+            <vl-style-icon src="./assets/house-icon.png" :scale="0.5" :anchor="[0.1, 0.95]" :size="[128, 128]"></vl-style-icon>
           </vl-style-box>
-          <!-- overlay binded to feature -->
+          </vl-geom-point>
+
           <vl-overlay v-if="feature.geometry" :position="pointOnSurface(feature.geometry)" :offset="[10, 10]">
           </vl-overlay>
         </template>
@@ -130,17 +151,6 @@
         </component>
         <!--// style -->
       </component>
-      <!--// other layers -->
-
-      <!-- draw components -->
-      <!-- <vl-layer-vector id="draw-pane" v-if="mapPanel.tab === 'draw'">
-        <vl-source-vector ident="draw-target" :features.sync="drawnFeatures"></vl-source-vector>
-      </vl-layer-vector>
-
-      <vl-interaction-draw v-if="mapPanel.tab === 'draw' && drawType" source="draw-target" :type="drawType"></vl-interaction-draw>
-      <vl-interaction-modify v-if="mapPanel.tab === 'draw'" source="draw-target"></vl-interaction-modify>
-      <vl-interaction-snap v-if="mapPanel.tab === 'draw'" source="draw-target" :priority="10"></vl-interaction-snap>
-      // draw components -->
      </vl-map>
     <!--// app map -->
 
@@ -166,24 +176,29 @@
         <div class="panel-block" v-show="mapPanel.tab === 'state'">
           <table class="table is-fullwidth">
             <tr>
-              <th>Map center</th>
-              <td>{{ center }}</td>
+              <th>घर टोकन</th>
+              <td>
+                  <div class="input-group">
+                    <input id="name"
+                      name="name"
+                      v-model = 'houseToken'
+                      v-on:blur="fetchHouseData()"
+                      required/>
+                  </div>
+              </td>
             </tr>
             <tr>
-              <th>Map zoom</th>
-              <td>{{ zoom }}</td>
+                <td colspan="2">
+                    <img v-if="houseMeta.housePhoto" v-bind:src="'http://142.93.209.187/' + houseMeta.housePhoto"/>
+                </td>
             </tr>
             <tr>
-              <th>Map rotation</th>
-              <td>{{ rotation }}</td>
-            </tr>
-            <tr>
-              <th>Device coordinate</th>
-              <td>{{ deviceCoordinate }}</td>
-            </tr>
-            <tr>
-              <th>Selected features</th>
-              <td>{{ selectedFeatures.map(f => f.id) }}</td>
+              <th>घरको विवरण</th>
+              <td>
+                  <div v-for="(value, name) in houseData">
+                      {{ name }}: <b style="font-weight: bold">{{ value }}</b>
+                  </div>
+              </td>
             </tr>
           </table>
         </div>
@@ -217,9 +232,7 @@
                 @click="showBaseLayer(layer.name)">
           {{ layer.title }}
         </button>
-        <button class="button is-light" @click="mapVisible = !mapVisible">
-          {{ mapVisible ? 'Hide map' : 'Show map' }}
-        </button>
+
       </div>
     </div>
     <!--// base layers -->
@@ -227,12 +240,9 @@
 </template>
 
 <script>
-  import { kebabCase, range, random, camelCase } from 'lodash'
-  import { createProj, addProj, findPointOnSurface, createStyle, createMultiPointGeom, loadingBBox } from 'vuelayers/lib/ol-ext'
-  import pacmanFeaturesCollection from './assets/pacman.geojson'
-  import WardFeaturesCollection from './assets/geojson/WardBoundary.geojson'
-  // import MunicipalityBoundary from './assets/geojson/MunicipalityBoundary.json'
-  import RoadFeaturesCollection from './assets/geojson/Road.geojson'
+  import axios from 'axios'
+  import { kebabCase, camelCase } from 'lodash'
+  import { createProj, addProj, findPointOnSurface, createStyle } from 'vuelayers/lib/ol-ext'
   import ScaleLine from 'ol/control/ScaleLine'
   import FullScreen from 'ol/control/FullScreen'
   import OverviewMap from 'ol/control/OverviewMap'
@@ -263,46 +273,7 @@
      * Packman layer Style function factory
      * @return {ol.StyleFunction}
      */
-    pacmanStyleFunc () {
-      const pacman = [
-        createStyle({
-          strokeColor: '#de9147',
-          strokeWidth: 3,
-          fillColor: [222, 189, 36, 0.8],
-        }),
-      ]
-      const path = [
-        createStyle({
-          strokeColor: 'blue',
-          strokeWidth: 1,
-        }),
-        createStyle({
-          imageRadius: 5,
-          imageFillColor: 'orange',
-          geom (feature) {
-            // geometry is an LineString, convert it to MultiPoint to style vertex
-            return createMultiPointGeom(feature.getGeometry().getCoordinates())
-          },
-        }),
-      ]
-      const eye = [
-        createStyle({
-          imageRadius: 6,
-          imageFillColor: '#444444',
-        }),
-      ]
 
-      return function __pacmanStyleFunc (feature) {
-        switch (feature.getId()) {
-          case 'pacman':
-            return pacman
-          case 'pacman-path':
-            return path
-          case 'pacman-eye':
-            return eye
-        }
-      }
-    },
     /**
      * Cluster layer style function factory
      * @return {ol.StyleFunction}
@@ -339,7 +310,7 @@
       const feature = this.$refs.marker.$feature
       if (!feature.getGeometry() || !feature.getStyle()) return
 
-      const flashGeom = feature.getGeometry().clone()
+      // const flashGeom = feature.getGeometry().clone()
       const duration = feature.get('duration')
       const elapsed = frameState.time - feature.get('start')
       const elapsedRatio = elapsed / duration
@@ -403,15 +374,40 @@
         this.drawType = undefined
       }
     },
+
+    fetchHouseData (){
+        const URL = 'http://127.0.0.1:5000/data/house_data/'+this.houseToken;
+        axios(URL, {
+            method: 'GET',
+            headers: {
+              'Accept': 'text/html'
+              }
+          }).then(response => {
+              console.log(this.center)
+              this.houseData = response.data.data
+              this.houseMeta = response.data.meta
+              this.center = [Number(response.data.meta.long), Number(response.data.meta.lat)]
+              this.marker = this.center
+              console.log(this.marker.__type())
+              console.log(this.center)
+          })
+        },
+        updateHouseToken(token){
+            this.houseToken = token
+            this.fetchHouseData()
+        }
   }
 
   export default {
     name: 'vld-demo-app',
-    methods,
     data () {
       return {
-        center: [87.5851498, 27.145691],
-        zoom:   15,
+        marker: '',
+        center: [  87.574127 ,27.258288  ],
+        houseToken: '',
+        houseData: {},
+        houseMeta: {},
+        zoom: 12,
         rotation: 0,
         clickCoordinate: undefined,
         selectedFeatures: [],
@@ -421,35 +417,6 @@
         },
         panelOpen: true,
         mapVisible: true,
-        // drawControls: [
-        //   {
-        //     type: 'point',
-        //     label: 'Draw Point',
-        //     icon: 'map-marker',
-        //   },
-        //   {
-        //     type: 'line-string',
-        //     label: 'Draw LineString',
-        //     icon: 'minus',
-        //   },
-        //   {
-        //     type: 'polygon',
-        //     label: 'Draw Polygon',
-        //     icon: 'square-o',
-        //   },
-        //   {
-        //     type: 'circle',
-        //     label: 'Draw Circle',
-        //     icon: 'circle-thin',
-        //   },
-        //   {
-        //     type: undefined,
-        //     label: 'Stop drawing',
-        //     icon: 'times',
-        //   },
-        // ],
-        // drawType: undefined,
-        // drawnFeatures: [],
         // base layers
         baseLayers: [
           {
@@ -457,89 +424,242 @@
             title: 'OpenStreetMap',
             visible: true,
           },
-          // {
-          //   name: 'sputnik',
-          //   title: 'Sputnik Maps',
-          //   visible: false,
-          // },
-          // needs paid plan to get key
-          // {
-          //   name: 'mapbox',
-          //   title: 'Mapbox',
-          // },
-          // {
-          //   name: 'bingmaps',
-          //   title: 'Bing Maps',
-          //   apiKey: 'ArbsA9NX-AZmebC6VyXAnDqjXk6mo2wGCmeYM8EwyDaxKfQhUYyk0jtx6hX5fpMn',
-          //   imagerySet: 'CanvasGray',
-          //   visible: false,
-          // },
         ],
         // layers config
         layers: [
-          // Packman vector layer with static vector features
-          // rendered through vl-feature component.
           {
-            id: 'pacman',
-            title: 'Pacman',
-            cmp: 'vl-layer-vector',
-            visible: false,
-            renderMode: 'image',
-            source: {
-              cmp: 'vl-source-vector',
-              staticFeatures: RoadFeaturesCollection.features,
-            },
-            style: [
-              {
-                cmp: 'vl-style-func',
-                factory: this.pacmanStyleFunc,
-              },
-            ],
-          },
-          // Circles
-          {
-            id: 'circles',
-            title: 'Circles',
+            id: 'roads',
+            title: 'Road',
             cmp: 'vl-layer-vector',
             visible: false,
             source: {
               cmp: 'vl-source-vector',
-              staticFeatures: range(0, 100).map(i => {
-                let coordinate = [
-                  random(-50, 50),
-                  random(-50, 50),
-                ]
-
-                return {
-                  type: 'Feature',
-                  id: 'random-cirlce-' + i,
-                  geometry: {
-                    type: 'Circle',
-                    coordinates: coordinate,
-                    radius: random(Math.pow(10, 5), Math.pow(10, 6)),
-                  },
-                }
-              }),
-            },
-          },
-          // Borders vector layer
-          // loads GeoJSON data from remote server
-          {
-            id: 'borders',
-            title: 'Border',
-            cmp: 'vl-layer-vector',
-            visible: false,
-            source: {
-              cmp: 'vl-source-vector',
-              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Boundary.geojson?token=ACM6H4TLNXZJM7DNX542CCK5N6Q4I',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Road.json',
             },
             style: [
               {
                 cmp: 'vl-style-box',
                 styles: {
                   'vl-style-fill': {
-                    color: [255, 255, 255, 0.5],
+                    color: 'rgb(242, 229, 57)',
                   },
+                  'vl-style-stroke': {
+                    color: '#d5a016',
+                    width: 2,
+                  },
+                  'vl-style-text': {
+                    text: '\uf041',
+                    font: '24px FontAwesome',
+                    fill: {
+                      color: 'rgb(240, 205, 20)',
+                    },
+                    stroke: {
+                      color: 'white',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            id: 'wards',
+            title: 'Wards',
+            cmp: 'vl-layer-vector',
+            visible: true,
+            source: {
+              cmp: 'vl-source-vector',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Ward.geojson',
+            },
+            style: [
+              {
+                cmp: 'vl-style-box',
+                styles: {
+                  'vl-style-stroke': {
+                    color: '#219e46',
+                    width: 2,
+                  },
+                  'vl-style-text': {
+                    text: '\uf041',
+                    font: '24px FontAwesome',
+                    fill: {
+                      color: '#2355af',
+                    },
+                    stroke: {
+                      color: 'white',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            id: 'buildings',
+            title: 'Buildings',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Building.geojson',
+            },
+            style: [
+              {
+                cmp: 'vl-style-box',
+                styles: {
+                  'vl-style-stroke': {
+                    color: '#219e46',
+                    width: 2,
+                  },
+                  'vl-style-text': {
+                    text: '\uf041',
+                    font: '24px FontAwesome',
+                    fill: {
+                      color: '#2355af',
+                    },
+                    stroke: {
+                      color: 'white',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            id: 'cultural',
+            title: 'Cultural',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Cultural.geojson',
+            },
+            style: [
+              {
+                cmp: 'vl-style-box',
+                styles: {
+                  'vl-style-stroke': {
+                    color: '#219e46',
+                    width: 2,
+                  },
+                  'vl-style-text': {
+                    text: '\uf041',
+                    font: '24px FontAwesome',
+                    fill: {
+                      color: '#2355af',
+                    },
+                    stroke: {
+                      color: 'white',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            id: 'historical',
+            title: 'Historical',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Historical.geojson',
+            },
+            style: [
+              {
+                cmp: 'vl-style-box',
+                styles: {
+                  'vl-style-stroke': {
+                    color: '#219e46',
+                    width: 2,
+                  },
+                  'vl-style-text': {
+                    text: '\uf041',
+                    font: '24px FontAwesome',
+                    fill: {
+                      color: '#2355af',
+                    },
+                    stroke: {
+                      color: 'white',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            id: 'infrastructure',
+            title: 'Infrastructure',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Infrastructure.geojson',
+            },
+            style: [
+              {
+                cmp: 'vl-style-box',
+                styles: {
+                  'vl-style-stroke': {
+                    color: '#219e46',
+                    width: 2,
+                  },
+                  'vl-style-text': {
+                    text: '\uf041',
+                    font: '24px FontAwesome',
+                    fill: {
+                      color: '#2355af',
+                    },
+                    stroke: {
+                      color: 'white',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            id: 'tourist-sites',
+            title: 'Tourist Sites',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector',
+              url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Tourism.geojson',
+            },
+            style: [
+              {
+                cmp: 'vl-style-box',
+                styles: {
+                  'vl-style-stroke': {
+                    color: '#219e46',
+                    width: 2,
+                  },
+                  'vl-style-text': {
+                    text: '\uf041',
+                    font: '24px FontAwesome',
+                    fill: {
+                      color: '#2355af',
+                    },
+                    stroke: {
+                      color: 'white',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            id: 'landcover',
+            title: 'Landcover',
+            cmp: 'vl-layer-vector',
+            visible: false,
+            source: {
+              cmp: 'vl-source-vector',
+              url: 'https://github.com/rajsanjib/Gaupalika-Profile/blob/master/geojson/Ward2Landuse.geojson'
+            },
+            style: [
+              {
+                cmp: 'vl-style-box',
+                styles: {
                   'vl-style-stroke': {
                     color: '#219e46',
                     width: 2,
@@ -559,7 +679,40 @@
             ],
           },
 
-          
+          // Borders vector layer
+          // loads GeoJSON data from remote server
+          // {
+          //   id: 'borders',
+          //   title: 'Border',
+          //   cmp: 'vl-layer-vector',
+          //   visible: false,
+          //   source: {
+          //     cmp: 'vl-source-vector',
+          //     url: 'https://raw.githubusercontent.com/rajsanjib/Gaupalika-Profile/master/geojson/Boundary.geojson',
+          //   },
+          //   style: [
+          //     {
+          //       cmp: 'vl-style-box',
+          //       styles: {
+          //         'vl-style-stroke': {
+          //           color: '#219e46',
+          //           width: 2,
+          //         },
+          //         'vl-style-text': {
+          //           text: '\uf041',
+          //           font: '24px FontAwesome',
+          //           fill: {
+          //             color: '#2355af',
+          //           },
+          //           stroke: {
+          //             color: 'white',
+          //           },
+          //         },
+          //       },
+          //     },
+          //   ],
+          // },
+
           // Tile layer with WMS source
           // {
           //   id: 'wms',
@@ -690,6 +843,7 @@
         ],
       }
     },
+    methods,
   }
 </script>
 
@@ -711,6 +865,10 @@
 
     .map-panel
       padding: 0
+
+      .collapse-content
+          height: 600px
+          overflow-y: scroll
 
       .panel-heading
         box-shadow: 0 .25em .5em transparentize($dark, 0.8)
